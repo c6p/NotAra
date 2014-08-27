@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>pdfview.qml</file>
+    </qresource>
+</RCC>
