@@ -2,14 +2,14 @@ QT +=  core widgets quick
 HEADERS =   mainwindow.h \
     pdfview.h \
     pdfpage.h \
-    pdfmodel.h \
-    pdfimageprovider.h
+    pdfimageprovider.h \
+    pdfpagemodel.h
 SOURCES =   main.cpp \
     mainwindow.cpp \
     pdfview.cpp \
     pdfpage.cpp \
-    pdfmodel.cpp \
-    pdfimageprovider.cpp
+    pdfimageprovider.cpp \
+    pdfpagemodel.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 INCLUDEPATH += /usr/include/poppler/qt5

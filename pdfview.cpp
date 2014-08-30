@@ -4,7 +4,7 @@
 #include <QQuickWindow>
 #include <QQmlContext>
 #include "pdfview.h"
-#include "pdfmodel.h"
+#include "pdfpagemodel.h"
 #include "pdfpage.h"
 
 
@@ -12,8 +12,10 @@ PDFView::PDFView(QQuickItem *parent) :
     QQuickItem(parent),
     _source(""), _currentPage(0),
     _zoom(1.0),
-    _dpi(QApplication::desktop()->physicalDpiX(), QApplication::desktop()->physicalDpiY()),
-    _numPages(0)
+    _dpi(QApplication::desktop()->physicalDpiX(),
+         QApplication::desktop()->physicalDpiY()),
+    _numPages(0),
+    _cursorMode(CursorMode::Cursor)
 {
     setFlags(QQuickItem::ItemClipsChildrenToShape | QQuickItem::ItemHasContents);
 }
@@ -35,6 +37,21 @@ const QPoint PDFView::dpi() const
 
 QSize PDFView::pageSize() const
 { return _pageSize; }
+
+PDFView::CursorMode PDFView::cursorMode() const
+{ return _cursorMode; }
+
+int PDFView::firstHandlePage() const
+{ return _handlePages.first; }
+
+QPointF PDFView::firstHandlePoint() const
+{ return _handlePoints.first; }
+
+int PDFView::secondHandlePage() const
+{ return _handlePages.second; }
+
+QPointF PDFView::secondHandlePoint() const
+{ return _handlePoints.second; }
 
 
 void PDFView::setCurrentPage(int currPage)
@@ -65,10 +82,19 @@ void PDFView::setZoom(qreal zoomPage)
     }
 }
 
-void PDFView::setModel(PDFModel *model)
+void PDFView::setCursorMode(CursorMode mode)
 {
-    _model = model;
-    int size =  _model->rowCount(QModelIndex());
+    if (_cursorMode != mode)
+    {
+        _cursorMode = mode;
+        emit cursorModeChanged();
+    }
+}
+
+void PDFView::setPageModel(PDFPageModel *model)
+{
+    _pageModel = model;
+    int size =  _pageModel->rowCount(QModelIndex());
     int bottom = size ? size-1 : 0;
 }
 
@@ -80,37 +106,94 @@ void PDFView::load(const QUrl &url)
     emit sourceChanged();
 }
 
-void PDFView::selectText(int page1, QPointF p1, int page2, QPointF p2)
+void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2)
 {
-    for (int i=_selectPage.first; i<=_selectPage.second; i++)
+    page1 = std::max(page1, 0);
+    page2 = std::max(page2, 0);
+    // Clear selection
+    for (int i=_rectPages.first; i<=_rectPages.second; i++)
     {
-        _model->page(i)->clearSelection();
+        _pageModel->page(i)->clearSelection();
     }
-    emit _model->dataChanged(_model->index(_selectPage.first),
-            _model->index(_selectPage.second));
-    _selectPage= std::minmax(page1, page2);
+    emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
+            _pageModel->index(_rectPages.second));
 
-    if (page1 == page2) {
+    // Make page1 <= page2
+    _rectPages = std::minmax(page1, page2);
+    // Swap if necessary, so p1 on topleft of p2
+    if (page1 == page2)
+    {
         if (p1.y() > p2.y())
             std::swap(p1, p2);
-        else if (p1.y() == p2.y()) {
+        else if (p1.y() == p2.y())
+        {
             if (p1.x() > p2.x())
                 std::swap(p1, p2);
         }
-    } else if (page1 > page2)
+    }
+    else if (page1 > page2)
         std::swap(p1, p2);
+    _rectPoints = std::make_pair(p1, p2);
+    qDebug()<< "PDFView::setRect" << _rectPages.first << _rectPoints.first
+            << _rectPages.second << _rectPoints.second;
 
-    qDebug()<< "PDFView::selectText" << _selectPage.first << p1 << _selectPage.second << p2;
-    for (int i=_selectPage.first; i<=_selectPage.second; i++)
+    _selectText();
+}
+
+void PDFView::_selectText()
+{
+    for (int i=_rectPages.first; i<=_rectPages.second; i++)
     {
-        auto *p = _model->page(i);
+        auto *p = _pageModel->page(i);
         auto size = p->pageSize();
-        QPointF begin = i == _selectPage.first ? p1 : QPointF(0, 0);
-        QPointF end = i == _selectPage.second ? p2 : QPointF(size.width(), size.height());
+        QPointF begin = i == _rectPages.first
+                ? _rectPoints.first
+                : QPointF(0, 0);
+        QPointF end = i == _rectPages.second
+                ? _rectPoints.second
+                : QPointF(size.width(), size.height());
         p->selectMarked(begin, end);
     }
-    emit _model->dataChanged(_model->index(_selectPage.first),
-            _model->index(_selectPage.second));
+
+    bool noSelection = true;
+    // Move first text handle
+    for (int i=_rectPages.first; i<=_rectPages.second; i++)
+    {
+        auto sel = _pageModel->page(i)->selection();
+        if (!sel.empty())
+        {
+            _handlePages.first = i;
+            _handlePoints.first = sel.front().toRect().bottomLeft();
+            noSelection = false;
+            break;
+        }
+    }
+    // No text selected, so no selection handle
+    if (noSelection)
+    {
+        _handlePages.first = -1;
+        _handlePages.second = -1;
+        _handlePoints.first = QPoint();
+        _handlePoints.second = QPoint();
+    }
+    else
+    {
+        // Move second text handle
+        for (int i=_rectPages.second; i>=_rectPages.first; i--)
+        {
+            auto sel = _pageModel->page(i)->selection();
+            if (!sel.empty())
+            {
+                _handlePages.second = i;
+                _handlePoints.second = sel.back().toRect().bottomRight();
+                break;
+            }
+        }
+    }
+    qDebug() << _handlePages.first << _handlePages.second;
+
+    emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
+            _pageModel->index(_rectPages.second));
 }
 
 void PDFView::_loadPDF()
@@ -153,8 +236,8 @@ void PDFView::_loadPages()
     emit pageSizeChanged();
     qDebug() << "PDFView::_loadPages" << _pageSize;
 
-    Q_CHECK_PTR(_model);
-    _model->setPages(pages);
+    Q_CHECK_PTR(_pageModel);
+    _pageModel->setPages(pages);
 }
 
 QImage PDFView::renderPage(int page) const
@@ -162,7 +245,7 @@ QImage PDFView::renderPage(int page) const
     QPoint res(_dpi * _zoom);
     qDebug() << "PDFView::renderPage" << page << "ZOOM:"
         << _zoom << "RES:" << res << "dpi";
-    return _model->page(page)->render(res.x(), res.y());
+    return _pageModel->page(page)->render(res.x(), res.y());
 }
 
 

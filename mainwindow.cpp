@@ -1,7 +1,7 @@
 #include <QtWidgets>
 #include <QQmlContext>
 #include "mainwindow.h"
-#include "pdfmodel.h"
+#include "pdfpagemodel.h"
 #include "pdfimageprovider.h"
 
 MainWindow::MainWindow(const QUrl& url)
@@ -14,7 +14,7 @@ MainWindow::MainWindow(const QUrl& url)
     QToolBar *toolBar = addToolBar(tr("Navigation"));
     toolBar->addWidget(_locationEdit);
 
-    PDFModel *pdfModel = new PDFModel;
+    PDFPageModel *pdfPageModel = new PDFPageModel;
     //pages.push_back(new PDFPage(nullptr, 0));
     //pages.push_back(new PDFPage(nullptr, 1));
     //pages.push_back(new PDFPage(nullptr, 2));
@@ -24,7 +24,7 @@ MainWindow::MainWindow(const QUrl& url)
     PDFImageProvider *pdfImageProvider =  new PDFImageProvider;
     _pdfQuickView->setColor(palette().color(QPalette::Normal, QPalette::Window));
     _pdfQuickView->engine()->addImageProvider(QLatin1String("pdfImage"), pdfImageProvider);
-    _pdfQuickView->engine()->rootContext()->setContextProperty("pdfModel", pdfModel);
+    _pdfQuickView->engine()->rootContext()->setContextProperty("pdfModel", pdfPageModel);
     _pdfQuickView->setResizeMode(QQuickView::SizeRootObjectToView);
     _pdfQuickView->setSource(QUrl("qrc:/pdfview.qml"));
     //_pdfQuickView->setSource(QUrl("qrc:/test.qml"));
@@ -33,7 +33,7 @@ MainWindow::MainWindow(const QUrl& url)
     // Provide images for PDFView
     QObject *object = _pdfQuickView->rootObject();
     _pdfView = qobject_cast<PDFView*>(object);
-    _pdfView->setModel(pdfModel);
+    _pdfView->setPageModel(pdfPageModel);
     pdfImageProvider->setPDFView(_pdfView);
 
     // Add widgets to window

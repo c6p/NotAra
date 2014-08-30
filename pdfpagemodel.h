@@ -1,11 +1,11 @@
-#ifndef PDFMODEL_H
-#define PDFMODEL_H
+#ifndef PDFPAGEMODEL_H
+#define PDFPAGEMODEL_H
 
 #include <QtCore>
 
 class PDFPage;
 
-class PDFModel : public QAbstractListModel
+class PDFPageModel : public QAbstractListModel
 {
     Q_OBJECT
 public:
@@ -13,11 +13,10 @@ public:
         SizeRole = Qt::UserRole + 1,
         NumberRole,
         SelectionRole,
-        WidthRole,
-        HeightRole
+        HandleRole
     };
 
-    PDFModel(QObject *parent = 0);
+    PDFPageModel(QObject *parent = 0);
 
     QList<PDFPage*> _pages;
 
@@ -28,4 +27,4 @@ public:
     QHash<int, QByteArray> roleNames() const;
 };
 
-#endif // PDFMODEL_H
+#endif // PDFPAGEMODEL_H

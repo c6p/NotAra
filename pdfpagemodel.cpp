@@ -1,15 +1,15 @@
-#include "pdfmodel.h"
+#include "pdfpagemodel.h"
 #include "pdfpage.h"
 
-PDFModel::PDFModel(QObject *parent) : QAbstractListModel(parent)
+PDFPageModel::PDFPageModel(QObject *parent) : QAbstractListModel(parent)
 {}
 
-PDFPage* PDFModel::page(int number)
+PDFPage* PDFPageModel::page(int number)
 {
     return _pages[number];
 }
 
-void PDFModel::setPages(QList<PDFPage*> pages)
+void PDFPageModel::setPages(QList<PDFPage*> pages)
 {
     int bottom = _pages.size() ? _pages.size()-1 : 0;
     beginRemoveRows(QModelIndex(), 0, bottom);
@@ -20,15 +20,15 @@ void PDFModel::setPages(QList<PDFPage*> pages)
     beginInsertRows(QModelIndex(), 0, bottom);
     endInsertRows();
 
-    qDebug() << "PDFModel::setPages " << 0 << "-" << bottom;
+    qDebug() << "PDFPageModel::setPages " << 0 << "-" << bottom;
 }
 
-int PDFModel::rowCount(const QModelIndex &parent) const
+int PDFPageModel::rowCount(const QModelIndex &parent) const
 {
     return _pages.size();
 }
 
-QVariant PDFModel::data(const QModelIndex &index, int role) const
+QVariant PDFPageModel::data(const QModelIndex &index, int role) const
 {
     auto &p = _pages[index.row()];
     if (role == PageRoles::SizeRole)
@@ -39,7 +39,7 @@ QVariant PDFModel::data(const QModelIndex &index, int role) const
         return QVariant(p->pageNumber());
 }
 
-QHash<int, QByteArray> PDFModel::roleNames() const
+QHash<int, QByteArray> PDFPageModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[PageRoles::SizeRole] = "pageSize";

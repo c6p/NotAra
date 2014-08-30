@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/">
         <file>pdfview.qml</file>
+        <file>images/crop.svg</file>
+        <file>images/rectangle_stroked.svg</file>
+        <file>images/cursor.svg</file>
+        <file>TextHandle.qml</file>
     </qresource>
 </RCC>

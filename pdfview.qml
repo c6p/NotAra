@@ -2,170 +2,226 @@ import QtQuick 2.0
 import MyTypes 1.0
 import QtGraphicalEffects 1.0
 import QtQuick.Controls 1.2
+import QtQuick.Layouts 1.0
+
+// TODO Center listView on mouse position upon zoom
 
 PDFView {
     id: pdfView
+
+    property var pages: new Object()
+    function showHandles(show)
+    {
+        show = typeof show !== 'undefined' ? show : true;
+        console.log("showHandles ("+show+") "+firstHandlePage+", "+secondHandlePage)
+        var item;
+        var firstPage = pages[firstHandlePage]
+        var secondPage = pages[secondHandlePage]
+        if (!show || !firstPage) {
+            handleBegin.visible = false
+        } else {
+            handleBegin.parent = firstPage
+            handleBegin.visible = true
+        }
+        handleBegin.page = firstHandlePage
+        handleBegin.pos = firstHandlePoint
+        handleBegin.setXY()
+        if (!show || !secondPage) {
+            handleEnd.visible = false
+        } else {
+            handleEnd.parent = secondPage
+            handleEnd.visible = true
+        }
+        handleEnd.pos = secondHandlePoint
+        handleEnd.page = secondHandlePage
+        handleEnd.setXY()
+    }
 
     Component {
         id: pageDelegate
 
         Rectangle {
-            Component.onCompleted: console.log(pageNumber, pageSize, selection)
+            Component.onCompleted: {
+                pdfView.pages[pageNumber] = this
+                // TODO Broadcast item events
+                console.log(pageNumber, pageSize, selection)
+            }
+            Component.onDestruction: {
+                pdfView.pages[pageNumber] = null
+            }
+            anchors.horizontalCenter: parent.horizontalCenter
+            property int index: pageNumber
             id: page
-          //          Text { text : pageNumber + pageSize }
-            width: parent.width
-            height: pageSize.height * pdfView.scale
-            //      width: pageWidth;
-      //      height: pageHeight;
-           // height: pageImage.height
-             color: "transparent";
-             Image {
-                 //width: parent.width
-                 //height: parent.height
-                 //width: pageSize.width// * pdfView.dpi.x * pdfView.zoom
-                 //height: pageSize.height// * pdfView.dpi.y * pdfView.zoom
-                 id: pageImage
-                 fillMode: Image.PreserveAspectFit
-                 asynchronous: true
-                 source:  "image://pdfImage/" + pageNumber
-                 //source: ""
-                 sourceSize.width:  pdfView.fitWidth ? listView.width : pageSize.width* pdfView.scale
-                 //onWidthChanged: { if (source==="") source = tmpSource; console.log(source); }
-                 //property string tmpSource: "image://pdfImage/swap" + pageNumber
-                 //onStatusChanged: if (status == Image.Ready) { var tmp=pageImage.source; pageImage.source=tmpSource; tmpSource=tmp; source=""; }
-                 //onStatusChanged: if (status == Image.Ready) { var tmp=pageImage.source; pageImage.source=source; source=tmp; }
-//                 onStatusChanged: if (status == Image.Ready) {
-//                         var tmp;
-//                         tmp=width; width=sourceSize.width; sourceSize.width=tmp;
-//                         //swap(source, tmpSource);
-//                         tmp=z; z=pageImage.z; pageImage.z=tmp;
-//                         tmp=fillMode; fillMode=pageImage.fillMode; pageImage.fillMode=tmp;
-//                         //swap(onWidthChanged, pageImage.onWidthChanged);
-//                          //                       console.log("pageImage SWAP "+z);
-//                 }
-                 //function swap(a, b) { var tmp=a; a=b; b=tmp; }
-                 z: 1;
-                 Repeater {
-                     model: selection
-                     Rectangle {
-                         x: model.modelData.x * pdfView.scale
-                         y: model.modelData.y * pdfView.scale
-                         width: model.modelData.width * pdfView.scale
-                         height: model.modelData.height * pdfView.scale
-                         color: "#403333cc"
-                     }
-                 }
-             }
-//            Image {
-//                width: parent.width
-//                //height: parent.height
-//                //width: pageSize.width// * pdfView.dpi.x * pdfView.zoom
-//                //height: pageSize.height// * pdfView.dpi.y * pdfView.zoom
-//                id: pageImage
-//                fillMode: Image.PreserveAspectCrop
-//                source: "image://pdfImage/" + pageNumber
-//                //property string tmpSource: ""
-//                asynchronous: true
-//                //property string tmpSource: ""
-//                //sourceSize.width: parent.width;
-//                //function swap() { var tmp=source; source=tmpSource; tmpSource=tmp; }
-//                //onWidthChanged: { console.log(source); reload(); }
-//                //onWidthChanged: { if (source==="") source = tmpSource; console.log(source); }
-//                onStatusChanged: if (status == Image.Ready) {
-//                        var tmp;
-//                        tmp=width; width=sourceSize.width; sourceSize.width=tmp;
-//                        //swap(source, tmpSource);
-//                        tmp=z; z=pageSwapImage.z; pageSwapImage.z=tmp;
-//                        tmp=fillMode; fillMode=pageSwapImage.fillMode; pageSwapImage.fillMode=tmp;
-//                        //swap(onWidthChanged, pageImage.onWidthChanged);
-//                         //                       console.log("pageImage SWAP "+z);
-//                }
-//               // function swap(a, b) { var tmp=a; a=b; b=tmp; }
-//                z: 2;
-//            }
+            width: pageSize.width * pdfView.pageScale
+            height: pageSize.height * pdfView.pageScale
+            color: "transparent";
+            Image {
+                id: pageImage
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                source:  "image://pdfImage/" + pageNumber
+                sourceSize.width:  pdfView.fitWidth ? listView.width : pageSize.width* pdfView.pageScale
+                z: 1;
+                Repeater {
+                    model: selection
+                    Rectangle {
+                        x: model.modelData.x * pdfView.pageScale
+                        y: model.modelData.y * pdfView.pageScale
+                        width: model.modelData.width * pdfView.pageScale
+                        height: model.modelData.height * pdfView.pageScale
+                        color: "#403333cc"
+                    }
+                }
+                Repeater {
+                    model: handles
+                    TextHandle {
+                        x: model.modelData.x * pdfView.pageScale
+                        y: model.modelData.y * pdfView.pageScale
+                    }
+                }
+            }
         }
     }
     property bool fitWidth: false
-    property var scale: zoom * dpi.x / 72
-    //property var pageZoom: width / pageSize.width
-    //zoom: pageZoom// * (1+Math.log(Math.abs(listView.verticalVelocity)+1))
+    property real pageScale: zoom * dpi.x / 72
     zoom: pdfView.fitWidth ? listView.width / pageSize.width : zoom
-ScrollView {
-            anchors.fill: parent
-    ListView {
-        id: listView
+    ScrollView {
         anchors.fill: parent
-        model: pdfModel
-        delegate: pageDelegate
-        currentIndex: pdfView.currentPage
-        focus: true
-        //cacheBuffer: pdfView.pageSize.height
-        spacing: 2
-        maximumFlickVelocity: 1000
-        function mouseDelegateCoord(mx, my) {
-            var mouse = Qt.point(mx+contentX, my+contentY);
-            var item = itemAt(mouse.x, mouse.y);
-            var page = indexAt(mouse.x, mouse.y);
-            console.log(mouse.x, mouse.y, indexAt(mouse.x, mouse.y), item);
-            return [page, Qt.point( (mouse.x-item.x) / pdfView.scale, (mouse.y-item.y) / pdfView.scale)]; }
-
         MouseArea {
-//preventStealing: true
             property var p;
-             property point start : Qt.point(0,0)
-anchors.fill: parent
-onPressed: {             p = listView.mouseDelegateCoord(mouseX, mouseY);
-    start.x = mouseX;
-    start.y = mouseY; console.log(m) }
-// onEntered:  { start.x = mouseX; start.y = mouseY; console.log(pageNumber, mouseX, mouseY) }
-//        onExited: {
-//            selectionRect.width= Math.min(width,mouseX)-start.x;
-//            selectionRect.height= Math.max(height,mouseY)-start.y;}
-onReleased: {
-selectionRect.width = 0;
-    selectionRect.height = 0;
-//                             var newRect = Qt.createQmlObject(
-//'import QtQuick 2.0; Rectangle {color: "#333333cc";x:' + start.x + ';y:' + start.y +';width:' + (mouseX-start.x) + ';height:' + (mouseY-start.y) + '}',
-//                                         parent, "dynamicSnippet1");
-    var m = listView.mouseDelegateCoord(mouseX, mouseY);
-    console.log(m) }
-Rectangle {
-    id: selectionRect;
-    color: "#103333cc";
-}
-
-
-onWheel: {
-    if (wheel.modifiers & Qt.ControlModifier) {
-                    pdfView.zoom += wheel.angleDelta.y * 0.0005 ;
-        console.log(zoom)
-    wheel.accepted = true
+            anchors.fill: parent
+            onPressed: {             p = listView.pageCoordRel(mouseX, mouseY);
+                selectionRect.x = mouseX;
+                selectionRect.y = mouseY;
+                pdfView.showHandles(false);
             }
-    wheel.accepted = false
+            onReleased: {
+                selectionRect.width = 0;
+                selectionRect.height = 0;
+                var m = listView.pageCoordRel(mouseX, mouseY);
+                console.log("ON_RELEASED", m, p)
+                pdfView.setRect(p[0], p[1], m[0], m[1]);
+                pdfView.showHandles();
+                if (pdfView.cursorMode === PDFView.Rectangle && p[1] !== m[1])
+                    pdfContext.popup()
+            }
+            onPositionChanged: {
+
+                if (pressed) {
+                    var m = listView.pageCoordRel(mouseX, mouseY);
+                    selectionRect.width= (mouseX-selectionRect.x);
+                    selectionRect.height= (mouseY-selectionRect.y);
+                    console.log(p, m)
+                    pdfView.setRect(p[0], p[1], m[0], m[1]);
+                }
+            }
+            Rectangle {
+                id: selectionRect;
+                color: "#103333cc";
+            }
+        }
+        ListView {
+            id: listView
+            anchors.fill: parent
+            model: pdfModel
+            delegate: pageDelegate
+            currentIndex: pdfView.currentPage
+            focus: true
+            //cacheBuffer: pdfView.pageSize.height
+            spacing: 2
+            maximumFlickVelocity: 1000
+            function pageCoordRel(mx, my) {
+                return pageCoord(mx+contentX, my+contentY);
+            }
+
+            function pageCoord(mx, my) {
+                var item = itemAt(mx, my);
+                var page = indexAt(mx, my);
+                return [page, Qt.point( (mx-item.x) / pdfView.pageScale, (my-item.y) / pdfView.pageScale)];
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onWheel: {
+                    if (wheel.modifiers & Qt.ControlModifier) {
+                        wheel.accepted = true
+                        pdfView.zoom += wheel.angleDelta.y * 0.0005 ;
+                        console.log(zoom)
+                    } else
+                        wheel.accepted = false
+                }
+                onPressed: mouse.accepted = false;
+            }
+            ToolBar {
+                RowLayout {
+                    ToolButton {
+                        iconSource: "images/cursor.svg"
+                        onClicked: pdfView.cursorMode = PDFView.Cursor
+                    }
+                    ToolButton {
+                        iconSource: "images/rectangle_stroked.svg"
+                        onClicked: pdfView.cursorMode = PDFView.Rectangle
+                    }
+                }
+            }
+            Menu {
+                id: pdfContext
+                title: "Edit"
+
+                MenuItem {
+                    text: "Select"
+                }
+                MenuItem {
+                    text: "Crop"
+                    iconSource: "images/crop.svg"
+                }
+            }
+
+
         }
 
 
-onPositionChanged: {
-
-    if (pressed) {
-        selectionRect.x = start.x;
-        selectionRect.y = start.y;
-    var m = listView.mouseDelegateCoord(mouseX, mouseY);
-        selectionRect.width= (mouseX-start.x);
-        selectionRect.height= (mouseY-start.y);
-        console.log(p, m)
-        pdfView.selectText(p[0], p[1], m[0], m[1]);
-    } }
-}
     }
-}
 
+    TextHandle {
+        id: handleBegin
+        pageScale: pdfView.pageScale
+        parent : listView.contentItem;
+        onPressed: {
+            // Detach from page
+            x = parent.x + x
+            y = parent.y + y
+            parent = listView.contentItem;
+        }
+        onPositionChanged: {
+            var p = listView.pageCoord(x, y);
+            pdfView.setRect(p[0], p[1], handleEnd.page, handleEnd.pos)
+        }
 
+        onReleased: {
+            // Attach to page
+            pdfView.showHandles()
+        }
+    }
+    TextHandle {
+        id: handleEnd
+        pageScale: pdfView.pageScale
+        parent : listView.contentItem;
+        onPressed: {
+            // Detach from page
+            x = parent.x + x
+            y = parent.y + y
+            parent = listView.contentItem;
+        }
+        onPositionChanged: {
+            var p = listView.pageCoord(x, y);
+            pdfView.setRect(handleBegin.page, handleBegin.pos, p[0], p[1])
+        }
 
-
-         //MouseArea {
-         //    anchors.fill: parent
-         //    onClicked: console.log(pdfModel, listView.count)
-         //}
+        onReleased: {
+            // Attach to page
+            pdfView.showHandles()
+        }
+    }
 
 }
