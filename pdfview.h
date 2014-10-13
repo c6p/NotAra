@@ -57,8 +57,8 @@ public:
     QPointF firstHandlePoint() const;
     QPointF secondHandlePoint() const;
 
-    Q_INVOKABLE void setRect(int page1, QPointF p1, int page2, QPointF p2);
-    void _selectText();
+    Q_INVOKABLE void setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect);
+    void _selectText(bool asRect);
 
     void _loadPDF();
     void _loadPages();

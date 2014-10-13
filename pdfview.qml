@@ -72,12 +72,13 @@ PDFView {
                         color: "#403333cc"
                     }
                 }
-                Repeater {
-                    model: handles
-                    TextHandle {
-                        x: model.modelData.x * pdfView.pageScale
-                        y: model.modelData.y * pdfView.pageScale
-                    }
+                Rectangle {
+                    x: selectionRect.x * pdfView.pageScale
+                    y: selectionRect.y * pdfView.pageScale
+                    width: selectionRect.width * pdfView.pageScale
+                    height: selectionRect.height * pdfView.pageScale
+                    color: "transparent"
+                    border.width: 1
                 }
             }
         }
@@ -90,33 +91,35 @@ PDFView {
         MouseArea {
             property var p;
             anchors.fill: parent
-            onPressed: {             p = listView.pageCoordRel(mouseX, mouseY);
-                selectionRect.x = mouseX;
-                selectionRect.y = mouseY;
+            onPressed: {
+                p = listView.pageCoordRel(mouseX, mouseY);
+                selRect.x = mouseX;
+                selRect.y = mouseY;
                 pdfView.showHandles(false);
             }
             onReleased: {
-                selectionRect.width = 0;
-                selectionRect.height = 0;
+                selRect.width = 0;
+                selRect.height = 0;
                 var m = listView.pageCoordRel(mouseX, mouseY);
                 console.log("ON_RELEASED", m, p)
-                pdfView.setRect(p[0], p[1], m[0], m[1]);
-                pdfView.showHandles();
-                if (pdfView.cursorMode === PDFView.Rectangle && p[1] !== m[1])
+                var isRect = pdfView.cursorMode === PDFView.Rectangle;
+                pdfView.setRect(p[0], p[1], m[0], m[1], isRect);
+                pdfView.showHandles(!isRect);
+                if (isRect && p[1] !== m[1])
                     pdfContext.popup()
             }
             onPositionChanged: {
 
                 if (pressed) {
                     var m = listView.pageCoordRel(mouseX, mouseY);
-                    selectionRect.width= (mouseX-selectionRect.x);
-                    selectionRect.height= (mouseY-selectionRect.y);
+                    selRect.width= (mouseX-selRect.x);
+                    selRect.height= (mouseY-selRect.y);
                     console.log(p, m)
-                    pdfView.setRect(p[0], p[1], m[0], m[1]);
+                    pdfView.setRect(p[0], p[1], m[0], m[1], pdfView.cursorMode === PDFView.Rectangle);
                 }
             }
             Rectangle {
-                id: selectionRect;
+                id: selRect;
                 color: "#103333cc";
             }
         }

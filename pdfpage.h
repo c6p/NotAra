@@ -13,6 +13,7 @@ public:
     int pageNumber() const;
     QSize pageSize() const;
     QList<QVariant> selection() const;
+    QRectF selectionRect() const;
 
     void selectMarked(QPointF begin, QPointF end, bool asRect=false);
     void clearSelection();
@@ -24,6 +25,7 @@ public:
     bool _listRequested = false;
     QList<Poppler::TextBox*> _textList;
     QList<QVariant> _selection;
+    QRectF _selectionRect;
 
 };
 

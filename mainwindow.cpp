@@ -26,7 +26,8 @@ MainWindow::MainWindow(const QUrl& url)
     _pdfQuickView->engine()->addImageProvider(QLatin1String("pdfImage"), pdfImageProvider);
     _pdfQuickView->engine()->rootContext()->setContextProperty("pdfModel", pdfPageModel);
     _pdfQuickView->setResizeMode(QQuickView::SizeRootObjectToView);
-    _pdfQuickView->setSource(QUrl("qrc:/pdfview.qml"));
+    _pdfQuickView->setSource(QUrl("qrc:/PDF.qml"));
+    //_pdfQuickView->setSource(QUrl("qrc:/pdfview.qml"));
     //_pdfQuickView->setSource(QUrl("qrc:/test.qml"));
     qDebug() << _pdfQuickView->errors();
 

@@ -17,7 +17,7 @@ PDFView::PDFView(QQuickItem *parent) :
     _numPages(0),
     _cursorMode(CursorMode::Cursor)
 {
-    setFlags(QQuickItem::ItemClipsChildrenToShape | QQuickItem::ItemHasContents);
+    //setFlags(QQuickItem::ItemClipsChildrenToShape | QQuickItem::ItemHasContents);
 }
 
 QUrl PDFView::source() const
@@ -106,7 +106,7 @@ void PDFView::load(const QUrl &url)
     emit sourceChanged();
 }
 
-void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2)
+void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
 {
     page1 = std::max(page1, 0);
     page2 = std::max(page2, 0);
@@ -137,10 +137,10 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2)
     qDebug()<< "PDFView::setRect" << _rectPages.first << _rectPoints.first
             << _rectPages.second << _rectPoints.second;
 
-    _selectText();
+    _selectText(asRect);
 }
 
-void PDFView::_selectText()
+void PDFView::_selectText(bool asRect)
 {
     for (int i=_rectPages.first; i<=_rectPages.second; i++)
     {
@@ -152,7 +152,7 @@ void PDFView::_selectText()
         QPointF end = i == _rectPages.second
                 ? _rectPoints.second
                 : QPointF(size.width(), size.height());
-        p->selectMarked(begin, end);
+        p->selectMarked(begin, end, asRect);
     }
 
     bool noSelection = true;
@@ -190,6 +190,7 @@ void PDFView::_selectText()
             }
         }
     }
+    qDebug() << _rectPages.first << _rectPages.second;
     qDebug() << _handlePages.first << _handlePages.second;
 
     emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),

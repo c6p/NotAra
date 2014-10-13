@@ -5,5 +5,9 @@
         <file>images/rectangle_stroked.svg</file>
         <file>images/cursor.svg</file>
         <file>TextHandle.qml</file>
+        <file>TreeView.qml</file>
+        <file>PDF.qml</file>
+        <file>PDFPage.qml</file>
+        <file>PDFDoc.qml</file>
     </qresource>
 </RCC>

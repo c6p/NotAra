@@ -35,6 +35,8 @@ QVariant PDFPageModel::data(const QModelIndex &index, int role) const
         return QVariant(p->pageSize());
     else if (role == PageRoles::SelectionRole)
         return QVariant(p->selection());
+    else if (role == PageRoles::RectRole)
+        return QVariant(p->selectionRect());
     else // PageRoles::NumberRole
         return QVariant(p->pageNumber());
 }
@@ -45,5 +47,6 @@ QHash<int, QByteArray> PDFPageModel::roleNames() const
     roles[PageRoles::SizeRole] = "pageSize";
     roles[PageRoles::NumberRole] = "pageNumber";
     roles[PageRoles::SelectionRole] = "selection";
+    roles[PageRoles::RectRole] = "selectionRect";
     return roles;
 }

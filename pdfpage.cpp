@@ -17,7 +17,8 @@ PDFPage::~PDFPage()
 
 QImage PDFPage::render(int resX, int resY) const
 {
-    QImage image = _page->renderToImage(resX, resY);
+    //QImage image = _page->renderToImage(resX, resY);
+    QImage image = _page->renderToImage();
     qDebug() << "PDFPage::render" << _pageNumber << "at" << resX << resY
         << "dpi" << image.size() << "px";
     return image;
@@ -31,6 +32,9 @@ QSize PDFPage::pageSize() const
 
 QList<QVariant> PDFPage::selection() const
 { return _selection; }
+
+QRectF PDFPage::selectionRect() const
+{ return _selectionRect; }
 
 void PDFPage::clearSelection()
 {
@@ -47,7 +51,9 @@ void PDFPage::selectMarked(QPointF begin, QPointF end, bool asRect)
 
     QList<QVariant> rects;
     if (asRect) {
-
+        _selectionRect.setTopLeft(begin);
+        _selectionRect.setBottomRight(end);
+        qDebug()<< "PDFPage::selectMarked" <<  _selectionRect;
     } else {
         bool mark=false, nomark=false;
         QPointF topLeft, bottomRight;

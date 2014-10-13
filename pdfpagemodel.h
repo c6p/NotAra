@@ -13,7 +13,7 @@ public:
         SizeRole = Qt::UserRole + 1,
         NumberRole,
         SelectionRole,
-        HandleRole
+        RectRole
     };
 
     PDFPageModel(QObject *parent = 0);
