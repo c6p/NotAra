@@ -30,7 +30,37 @@ Rectangle {
         //                                 : pageSize.width * parent.scale
         z: 1;
 
+
         // Text highlight rectangles
+        Repeater {
+            model: highlights
+            Repeater {
+                model: modelData
+                Rectangle {
+                    x: model.modelData.x
+                    y: model.modelData.y
+                    width: model.modelData.width
+                    height: model.modelData.height
+                    color: "#40FFD700"
+                }
+            }
+        }
+
+        // Crop Rect
+        Repeater {
+            model: clipRects
+            Rectangle {
+                x: model.modelData.x;
+                y: model.modelData.y;
+                width: model.modelData.width;
+                height: model.modelData.height;
+                color: "transparent";
+                border.width: 1;
+                border.color: "#FFD700";
+            }
+        }
+
+        // Text selection rectangles
         Repeater {
             model: selection
             Rectangle {
@@ -38,11 +68,11 @@ Rectangle {
                 y: model.modelData.y
                 width: model.modelData.width
                 height: model.modelData.height
-                color: "#403333cc"
+                color: "#400070BB"
             }
         }
 
-        // Selection rectangle
+        // Selection Rect
         Rectangle {
             x: selectionRect.x;
             y: selectionRect.y;
@@ -50,6 +80,7 @@ Rectangle {
             height: selectionRect.height;
             color: "transparent";
             border.width: 1;
+            border.color: "#990070BB";
         }
 
     }

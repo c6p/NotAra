@@ -7,7 +7,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QUrl const& url);
+    MainWindow(int placeholder);
 
 public slots:
     void changeURL();
@@ -17,6 +17,8 @@ private:
     PDFView *_pdfView;
     QQuickView *_pdfQuickView;
     QLineEdit *_locationEdit;
+    QAction *_actionRect;
+    QAction *_actionHi;
 
     void _displayURL(QUrl const &url);
     void _loadURL(QUrl const &url);

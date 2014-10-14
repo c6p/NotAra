@@ -4,7 +4,7 @@
 #include "pdfpagemodel.h"
 #include "pdfimageprovider.h"
 
-MainWindow::MainWindow(const QUrl& url)
+MainWindow::MainWindow(int placeholder) : QMainWindow()
 {
     _splitter = new QSplitter(this);
     _locationEdit = new QLineEdit(this);
@@ -12,6 +12,9 @@ MainWindow::MainWindow(const QUrl& url)
     connect(_locationEdit, SIGNAL(returnPressed()), SLOT(changeURL()));
 
     QToolBar *toolBar = addToolBar(tr("Navigation"));
+    _actionRect = toolBar->addAction(QIcon("://images/rectangle_stroked.svg"), "Clip Rectangle");
+    _actionRect->setCheckable(true);
+    _actionHi = toolBar->addAction(QIcon("://images/bg_color.svg"), "Highlight");
     toolBar->addWidget(_locationEdit);
 
     PDFPageModel *pdfPageModel = new PDFPageModel;
@@ -36,6 +39,8 @@ MainWindow::MainWindow(const QUrl& url)
     _pdfView = qobject_cast<PDFView*>(object);
     _pdfView->setPageModel(pdfPageModel);
     pdfImageProvider->setPDFView(_pdfView);
+    QObject::connect(_actionRect, SIGNAL(toggled(bool)), _pdfView, SLOT(rectToggled(bool)));
+    QObject::connect(_actionHi, SIGNAL(triggered()), _pdfView, SLOT(clipRect()));
 
     // Add widgets to window
     QWidget *pdfContainer = QWidget::createWindowContainer(_pdfQuickView);
@@ -44,7 +49,6 @@ MainWindow::MainWindow(const QUrl& url)
     //_splitter->addWidget(new QTextEdit);
     //setUnifiedTitleAndToolBarOnMac(true);
 }
-
 
 void MainWindow::_displayURL(QUrl const &url)
 {
@@ -65,6 +69,7 @@ void MainWindow::_loadURL(QUrl const &url)
     qDebug() << _pdfQuickView->errors();
     //_pdfView->setFocus();
 }
+
 
 
 

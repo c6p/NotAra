@@ -9,5 +9,7 @@
         <file>PDF.qml</file>
         <file>PDFPage.qml</file>
         <file>PDFDoc.qml</file>
+        <file>ClipArea.qml</file>
+        <file>images/bg_color.svg</file>
     </qresource>
 </RCC>

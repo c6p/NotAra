@@ -41,8 +41,8 @@ public:
     QSize _pageSize;
     CursorMode _cursorMode;
 
-    std::pair<int, int> _handlePages, _rectPages;
-    std::pair<QPointF, QPointF> _handlePoints, _rectPoints;
+    std::pair<int, int> _handlePages, _rectPages, _clickPages;
+    std::pair<QPointF, QPointF> _handlePoints, _rectPoints, _clickPoints;
 
     QSize pageSize() const;
     QUrl source() const;
@@ -58,7 +58,8 @@ public:
     QPointF secondHandlePoint() const;
 
     Q_INVOKABLE void setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect);
-    void _selectText(bool asRect);
+    void _selectText();
+    void _selectRect();
 
     void _loadPDF();
     void _loadPages();
@@ -78,6 +79,8 @@ public slots:
     void setCurrentPage(int currPage);
     void setZoom(qreal zoomPage);
     void setCursorMode(CursorMode mode);
+    void rectToggled(bool rect);
+    void clipRect();
 };
 
 #endif // PDFVIEW_H

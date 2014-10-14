@@ -91,6 +91,14 @@ void PDFView::setCursorMode(CursorMode mode)
     }
 }
 
+void PDFView::rectToggled(bool rect)
+{
+    if (rect)
+        setCursorMode(CursorMode::Rectangle);
+    else
+        setCursorMode(CursorMode::Cursor);
+}
+
 void PDFView::setPageModel(PDFPageModel *model)
 {
     _pageModel = model;
@@ -113,11 +121,19 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
     // Clear selection
     for (int i=_rectPages.first; i<=_rectPages.second; i++)
     {
-        _pageModel->page(i)->clearSelection();
+        _pageModel->page(i)->clearText();
     }
     emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
             _pageModel->index(_rectPages.second));
 
+    _pageModel->page(_clickPages.first)->clearRect();
+    emit _pageModel->dataChanged(_pageModel->index(_clickPages.first),
+            _pageModel->index(_clickPages.first));
+
+    _clickPages.first = page1;
+    _clickPages.second = page2;
+    _clickPoints.first = p1;
+    _clickPoints.second = p2;
     // Make page1 <= page2
     _rectPages = std::minmax(page1, page2);
     // Swap if necessary, so p1 on topleft of p2
@@ -130,6 +146,11 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
             if (p1.x() > p2.x())
                 std::swap(p1, p2);
         }
+        if (p1.x() > p2.x()) {
+            int tmp = p1.x();
+            p1.setX(p2.x());
+            p2.setX(tmp);
+        }
     }
     else if (page1 > page2)
         std::swap(p1, p2);
@@ -137,10 +158,58 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
     qDebug()<< "PDFView::setRect" << _rectPages.first << _rectPoints.first
             << _rectPages.second << _rectPoints.second;
 
-    _selectText(asRect);
+    if (asRect)
+        _selectRect();
+    else
+        _selectText();
 }
 
-void PDFView::_selectText(bool asRect)
+//QString PDFView::clipboardText() {}
+//QImage PDFView::clipboardImage() {}
+//
+void PDFView::clipRect() {
+    //if (asRect) {
+        auto *p = _pageModel->page(_clickPages.first);
+        p->clipRect();
+    auto index = _pageModel->index(_clickPages.first);
+    emit _pageModel->dataChanged(index, index);
+    //} else {
+        for (int i=_rectPages.first; i<=_rectPages.second; i++)
+        {
+            auto *p = _pageModel->page(i);
+            p->clipText();
+        }
+    emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
+            _pageModel->index(_rectPages.second));
+    //}
+    // emit clipped(data);
+}
+
+void PDFView::_selectRect()
+{
+    auto *p = _pageModel->page(_clickPages.first);
+    auto size = p->pageSize();
+    if (_clickPages.first == _clickPages.second)
+        p->selectRect(_rectPoints.first, _rectPoints.second);
+    else {
+        qreal y1, y2;
+        if (_clickPages.first < _clickPages.second) {
+            y1 = _clickPoints.first.y();
+            y2 = size.height();
+        } else {
+            y1 = 0.f;
+            y2 = _clickPoints.first.y();
+        }
+        auto x = std::minmax(_clickPoints.first.x(), _clickPoints.second.x());
+        qreal x1 = std::max((qreal)0.f, x.first);
+        qreal x2 = std::min((qreal)size.width(), x.second);
+        p->selectRect(QPointF(x1,y1), QPointF(x2,y2));
+    }
+    auto index = _pageModel->index(_clickPages.first);
+    emit _pageModel->dataChanged(index, index);
+}
+
+void PDFView::_selectText()
 {
     for (int i=_rectPages.first; i<=_rectPages.second; i++)
     {
@@ -152,7 +221,7 @@ void PDFView::_selectText(bool asRect)
         QPointF end = i == _rectPages.second
                 ? _rectPoints.second
                 : QPointF(size.width(), size.height());
-        p->selectMarked(begin, end, asRect);
+        p->selectText(begin, end);
     }
 
     bool noSelection = true;

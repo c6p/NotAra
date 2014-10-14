@@ -23,36 +23,23 @@ PDFView {
             anchors.fill: parent
 
             onPressed: {
-                selRect.x = mouseX;
-                selRect.y = mouseY;
-                console.log(mouseX, mouseY);
                 p = pdfDoc.pageCoordRel(mouseX, mouseY);
                 //pdfView.showHandles(false);
             }
 
             onReleased: {
-                selRect.width = 0;
-                selRect.height = 0;
-                var m = pdfDoc.pageCoordRel(mouseX, mouseY);
                 var isRect = pdfView.cursorMode === PDFView.Rectangle;
-                    pdfView.setRect(p[0], p[1], m[0], m[1], isRect);
+                var m = pdfDoc.pageCoordRel(mouseX, mouseY);
+                pdfView.setRect(p[0], p[1], m[0], m[1], isRect);
                     //pdfView.showHandles(!isRect);
-                    if (isRect && p[1] !== m[1])
-                        pdfContext.popup()
             }
 
             onPositionChanged: {
                 if (pressed) {
-                    selRect.width= (mouseX-selRect.x);
-                    selRect.height= (mouseY-selRect.y);
+                    var isRect = pdfView.cursorMode === PDFView.Rectangle;
                     var m = pdfDoc.pageCoordRel(mouseX, mouseY);
-                        pdfView.setRect(p[0], p[1], m[0], m[1], pdfView.cursorMode === PDFView.Rectangle);
+                    pdfView.setRect(p[0], p[1], m[0], m[1], isRect);
                 }
-            }
-
-            Rectangle {
-                id: selRect;
-                color: "#103333cc";
             }
         }
 
@@ -66,31 +53,6 @@ PDFView {
                 scale: pdfDoc.pageScale;
             }
 
-            ToolBar {
-                RowLayout {
-                    ToolButton {
-                        iconSource: "images/cursor.svg"
-                        onClicked: pdfView.cursorMode = PDFView.Cursor
-                    }
-                    ToolButton {
-                        iconSource: "images/rectangle_stroked.svg"
-                        onClicked: pdfView.cursorMode = PDFView.Rectangle
-                    }
-                }
-            }
-
-            Menu {
-                id: pdfContext
-                title: "Edit"
-
-                MenuItem {
-                    text: "Select"
-                }
-                MenuItem {
-                    text: "Crop"
-                    iconSource: "images/crop.svg"
-                }
-            }
         }
     }
 
