@@ -5,7 +5,8 @@ HEADERS =   mainwindow.h \
     pdfimageprovider.h \
     pdfpagemodel.h \
     treemodel.h \
-    database.h
+    database.h \
+    clip.h
 SOURCES =   main.cpp \
     mainwindow.cpp \
     pdfview.cpp \
@@ -13,7 +14,8 @@ SOURCES =   main.cpp \
     pdfimageprovider.cpp \
     pdfpagemodel.cpp \
     treemodel.cpp \
-    database.cpp
+    database.cpp \
+    clip.cpp
 
 QMAKE_CXXFLAGS += -std=c++11
 INCLUDEPATH += /usr/include/poppler/qt5

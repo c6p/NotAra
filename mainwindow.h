@@ -15,6 +15,7 @@ public slots:
 private:
     QSplitter *_splitter;
     PDFView *_pdfView;
+    QQuickView *_formQuickView;
     QQuickView *_pdfQuickView;
     QLineEdit *_locationEdit;
     QAction *_actionRect;

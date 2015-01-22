@@ -11,5 +11,7 @@
         <file>PDFDoc.qml</file>
         <file>ClipArea.qml</file>
         <file>images/bg_color.svg</file>
+        <file>ClipItem.qml</file>
+        <file>FormClip.qml</file>
     </qresource>
 </RCC>

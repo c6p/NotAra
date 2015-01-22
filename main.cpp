@@ -1,11 +1,13 @@
 #include <QtWidgets>
 #include "mainwindow.h"
+//#include "clip.h"
 
 int main(int argc, char * argv[])
 {
     QApplication app(argc, argv);
 
     qmlRegisterType<PDFView>("MyTypes", 1, 0, "PDFView");
+    //qmlRegisterType<Clip>("MyTypes", 1, 0, "Clip");
     //qmlRegisterType<PDFView>("MyTypes", 1, 0, "PDFPage");
     //qmlRegisterType<PDFView>("MyTypes", 1, 0, "QRectF");
 

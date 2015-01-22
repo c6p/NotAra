@@ -30,50 +30,50 @@ int PDFPage::pageNumber() const
 QSize PDFPage::pageSize() const
 { return _pageSize; }
 
-QList<QVariant> PDFPage::selection() const
-{ return _selection; }
+QList<QVariant> PDFPage::selectedText() const
+{ return _selectedText; }
 
-QRectF PDFPage::selectionRect() const
-{ return _selectionRect; }
+QRectF PDFPage::selectedRect() const
+{ return _selectedRect; }
 
-QList<QVariant> PDFPage::highlights() const
-{ return _highlight; }
+QList<QVariant> PDFPage::clippedTexts() const
+{ return _clippedTexts; }
 
-QList<QVariant> PDFPage::clipRects() const
-{ return _clip; }
+QList<QVariant> PDFPage::clippedRects() const
+{ return _clippedRects; }
 
 void PDFPage::clearText()
 {
-    _selection.clear();
+    _selectedText.clear();
 }
 
 void PDFPage::clearRect()
 {
-    _selectionRect.setCoords(0,0,0,0);
+    _selectedRect.setCoords(0,0,0,0);
 }
 
 void PDFPage::clipRect()
 {
-    if (!_selectionRect.isValid())
+    if (!_selectedRect.isValid())
         return;
-    _clip.push_back(_selectionRect);
-    qDebug() << _clip;
+    _clippedRects.push_back(_selectedRect);
+    qDebug() << _clippedRects;
 }
 
 void PDFPage::clipText()
 {
-    if (_selection.isEmpty())
+    if (_selectedText.isEmpty())
         return;
-    _highlight.push_back(_selection);
-    qDebug() << _highlight;
+    _clippedTexts.push_back(_selectedText);
+    qDebug() << _clippedTexts;
 }
 
 
 void PDFPage::selectRect(QPointF begin, QPointF end)
 {
-    _selectionRect.setTopLeft(begin);
-    _selectionRect.setBottomRight(end);
-    qDebug()<< "PDFPage::selectRect" <<  _selectionRect;
+    _selectedRect.setTopLeft(begin);
+    _selectedRect.setBottomRight(end);
+    qDebug()<< "PDFPage::selectRect" <<  _selectedRect;
 }
 
 void PDFPage::selectText(QPointF begin, QPointF end)
@@ -119,6 +119,6 @@ void PDFPage::selectText(QPointF begin, QPointF end)
             break;
         }
     }
-    _selection = rects;
-    qDebug()<< "PDFPage::selectText" <<  _selection;
+    _selectedText = rects;
+    qDebug()<< "PDFPage::selectText" <<  _selectedText;
 }

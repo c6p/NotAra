@@ -4,8 +4,10 @@
 #include <QQuickItem>
 #include <QQuickImageProvider>
 #include <poppler-qt5.h>
+#include <QtSql>
 
 class PDFPageModel;
+
 
 class PDFView : public QQuickItem
 {
@@ -19,10 +21,6 @@ class PDFView : public QQuickItem
     Q_PROPERTY(int numPages READ numPages)
     Q_PROPERTY(CursorMode cursorMode READ cursorMode WRITE setCursorMode NOTIFY cursorModeChanged)
 
-    Q_PROPERTY(int firstHandlePage READ firstHandlePage)
-    Q_PROPERTY(int secondHandlePage READ secondHandlePage)
-    Q_PROPERTY(QPointF firstHandlePoint READ firstHandlePoint)
-    Q_PROPERTY(QPointF secondHandlePoint READ secondHandlePoint)
 public:
     explicit PDFView(QQuickItem *parent = 0);
 
@@ -32,17 +30,18 @@ public:
     };
 
     Poppler::Document* docPDF;
+    PDFPageModel *_pageModel;
     QUrl _source;
+    CursorMode _cursorMode;
+    QJsonDocument _clipData;
     int _currentPage;
     qreal _zoom;
     const QPoint _dpi;
     int _numPages;
-    PDFPageModel *_pageModel;
     QSize _pageSize;
-    CursorMode _cursorMode;
 
-    std::pair<int, int> _handlePages, _rectPages, _clickPages;
-    std::pair<QPointF, QPointF> _handlePoints, _rectPoints, _clickPoints;
+    std::pair<int, int> _orderedPages, _clickPages;
+    std::pair<QPointF, QPointF> _orderedPoints, _clickPoints;
 
     QSize pageSize() const;
     QUrl source() const;
@@ -51,11 +50,7 @@ public:
     const QPoint dpi() const;
     int numPages() const;
     CursorMode cursorMode() const;
-
-    int firstHandlePage() const;
-    int secondHandlePage() const;
-    QPointF firstHandlePoint() const;
-    QPointF secondHandlePoint() const;
+    QJsonDocument clipData() const;
 
     Q_INVOKABLE void setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect);
     void _selectText();
@@ -63,7 +58,9 @@ public:
 
     void _loadPDF();
     void _loadPages();
+    //void _loadClips();
     QImage renderPage(int page) const;
+    QImage renderRect(int page, QRectF rect) const;
 
     void setPageModel(PDFPageModel *model);
 

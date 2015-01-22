@@ -42,10 +42,19 @@ MainWindow::MainWindow(int placeholder) : QMainWindow()
     QObject::connect(_actionRect, SIGNAL(toggled(bool)), _pdfView, SLOT(rectToggled(bool)));
     QObject::connect(_actionHi, SIGNAL(triggered()), _pdfView, SLOT(clipRect()));
 
+    _formQuickView = new QQuickView;
+    _formQuickView->setColor(palette().color(QPalette::Normal, QPalette::Window));
+    _formQuickView->setResizeMode(QQuickView::SizeRootObjectToView);
+    _formQuickView->setSource(QUrl("qrc:/FormClip.qml"));
+    _pdfQuickView->engine()->rootContext()->setContextProperty("clipData", _pdfView->clipData());
+    qDebug() << _formQuickView->errors();
+
     // Add widgets to window
     QWidget *pdfContainer = QWidget::createWindowContainer(_pdfQuickView);
+    QWidget *formContainer = QWidget::createWindowContainer(_formQuickView);
     setCentralWidget(_splitter);
     _splitter->addWidget(pdfContainer);
+    _splitter->addWidget(formContainer);
     //_splitter->addWidget(new QTextEdit);
     //setUnifiedTitleAndToolBarOnMac(true);
 }
@@ -58,7 +67,7 @@ void MainWindow::_displayURL(QUrl const &url)
 void MainWindow::changeURL()
 {
     QUrl url = QUrl::fromUserInput(_locationEdit->text());
-    qDebug() << "MainWindow::changeURL:" << url.toString();
+    qDebug() << "MainWindow::changeURL:" << _locationEdit->text() << url.toString();
     _displayURL(url);
     _loadURL(url);
 }

@@ -34,13 +34,13 @@ QVariant PDFPageModel::data(const QModelIndex &index, int role) const
     if (role == PageRoles::SizeRole)
         return QVariant(p->pageSize());
     else if (role == PageRoles::SelectionRole)
-        return QVariant(p->selection());
+        return QVariant(p->selectedText());
     else if (role == PageRoles::RectRole)
-        return QVariant(p->selectionRect());
+        return QVariant(p->selectedRect());
     else if (role == PageRoles::HighlightRole)
-        return QVariant(p->highlights());
+        return QVariant(p->clippedTexts());
     else if (role == PageRoles::CropRole)
-        return QVariant(p->clipRects());
+        return QVariant(p->clippedRects());
     else // PageRoles::NumberRole
         return QVariant(p->pageNumber());
 }

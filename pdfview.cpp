@@ -6,7 +6,8 @@
 #include "pdfview.h"
 #include "pdfpagemodel.h"
 #include "pdfpage.h"
-
+#include "database.h"
+#include "clip.h"
 
 PDFView::PDFView(QQuickItem *parent) :
     QQuickItem(parent),
@@ -17,7 +18,6 @@ PDFView::PDFView(QQuickItem *parent) :
     _numPages(0),
     _cursorMode(CursorMode::Cursor)
 {
-    //setFlags(QQuickItem::ItemClipsChildrenToShape | QQuickItem::ItemHasContents);
 }
 
 QUrl PDFView::source() const
@@ -41,24 +41,14 @@ QSize PDFView::pageSize() const
 PDFView::CursorMode PDFView::cursorMode() const
 { return _cursorMode; }
 
-int PDFView::firstHandlePage() const
-{ return _handlePages.first; }
-
-QPointF PDFView::firstHandlePoint() const
-{ return _handlePoints.first; }
-
-int PDFView::secondHandlePage() const
-{ return _handlePages.second; }
-
-QPointF PDFView::secondHandlePoint() const
-{ return _handlePoints.second; }
-
+QJsonDocument PDFView::clipData() const
+{
+    return _clipData;
+}
 
 void PDFView::setCurrentPage(int currPage)
 {
     if((currPage > (numPages() - 1)) || (currPage < 0)) {
-        qDebug()<< "PDFView::setCurrentPage" << currPage
-            << "\nMax page: " <<docPDF->numPages();
         return;
     }
 
@@ -66,7 +56,6 @@ void PDFView::setCurrentPage(int currPage)
         _currentPage = currPage;
         emit currentPageChanged();
     } else {
-        qDebug()<< "PDFView::setCurrentPage" << currPage << _currentPage;
         return;
     }
 }
@@ -77,7 +66,6 @@ void PDFView::setZoom(qreal zoomPage)
         _zoom = std::max(0.25, std::min(qreal(4), zoomPage));
         emit zoomChanged();
     } else {
-        qDebug()<< "PDFView::setCurrentPage" << zoomPage << _zoom;
         return;
     }
 }
@@ -119,12 +107,12 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
     page1 = std::max(page1, 0);
     page2 = std::max(page2, 0);
     // Clear selection
-    for (int i=_rectPages.first; i<=_rectPages.second; i++)
+    for (int i=_orderedPages.first; i<=_orderedPages.second; i++)
     {
         _pageModel->page(i)->clearText();
     }
-    emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
-            _pageModel->index(_rectPages.second));
+    emit _pageModel->dataChanged(_pageModel->index(_orderedPages.first),
+            _pageModel->index(_orderedPages.second));
 
     _pageModel->page(_clickPages.first)->clearRect();
     emit _pageModel->dataChanged(_pageModel->index(_clickPages.first),
@@ -135,7 +123,7 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
     _clickPoints.first = p1;
     _clickPoints.second = p2;
     // Make page1 <= page2
-    _rectPages = std::minmax(page1, page2);
+    _orderedPages = std::minmax(page1, page2);
     // Swap if necessary, so p1 on topleft of p2
     if (page1 == page2)
     {
@@ -154,9 +142,9 @@ void PDFView::setRect(int page1, QPointF p1, int page2, QPointF p2, bool asRect)
     }
     else if (page1 > page2)
         std::swap(p1, p2);
-    _rectPoints = std::make_pair(p1, p2);
-    qDebug()<< "PDFView::setRect" << _rectPages.first << _rectPoints.first
-            << _rectPages.second << _rectPoints.second;
+    _orderedPoints = std::make_pair(p1, p2);
+    qDebug()<< "PDFView::setRect" << _orderedPages.first << _orderedPoints.first
+            << _orderedPages.second << _orderedPoints.second;
 
     if (asRect)
         _selectRect();
@@ -174,13 +162,13 @@ void PDFView::clipRect() {
     auto index = _pageModel->index(_clickPages.first);
     emit _pageModel->dataChanged(index, index);
     //} else {
-        for (int i=_rectPages.first; i<=_rectPages.second; i++)
+        for (int i=_orderedPages.first; i<=_orderedPages.second; i++)
         {
             auto *p = _pageModel->page(i);
             p->clipText();
         }
-    emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
-            _pageModel->index(_rectPages.second));
+    emit _pageModel->dataChanged(_pageModel->index(_orderedPages.first),
+            _pageModel->index(_orderedPages.second));
     //}
     // emit clipped(data);
 }
@@ -190,7 +178,7 @@ void PDFView::_selectRect()
     auto *p = _pageModel->page(_clickPages.first);
     auto size = p->pageSize();
     if (_clickPages.first == _clickPages.second)
-        p->selectRect(_rectPoints.first, _rectPoints.second);
+        p->selectRect(_orderedPoints.first, _orderedPoints.second);
     else {
         qreal y1, y2;
         if (_clickPages.first < _clickPages.second) {
@@ -211,59 +199,21 @@ void PDFView::_selectRect()
 
 void PDFView::_selectText()
 {
-    for (int i=_rectPages.first; i<=_rectPages.second; i++)
+    for (int i=_orderedPages.first; i<=_orderedPages.second; i++)
     {
         auto *p = _pageModel->page(i);
         auto size = p->pageSize();
-        QPointF begin = i == _rectPages.first
-                ? _rectPoints.first
+        QPointF begin = i == _orderedPages.first
+                ? _orderedPoints.first
                 : QPointF(0, 0);
-        QPointF end = i == _rectPages.second
-                ? _rectPoints.second
+        QPointF end = i == _orderedPages.second
+                ? _orderedPoints.second
                 : QPointF(size.width(), size.height());
         p->selectText(begin, end);
     }
 
-    bool noSelection = true;
-    // Move first text handle
-    for (int i=_rectPages.first; i<=_rectPages.second; i++)
-    {
-        auto sel = _pageModel->page(i)->selection();
-        if (!sel.empty())
-        {
-            _handlePages.first = i;
-            _handlePoints.first = sel.front().toRect().bottomLeft();
-            noSelection = false;
-            break;
-        }
-    }
-    // No text selected, so no selection handle
-    if (noSelection)
-    {
-        _handlePages.first = -1;
-        _handlePages.second = -1;
-        _handlePoints.first = QPoint();
-        _handlePoints.second = QPoint();
-    }
-    else
-    {
-        // Move second text handle
-        for (int i=_rectPages.second; i>=_rectPages.first; i--)
-        {
-            auto sel = _pageModel->page(i)->selection();
-            if (!sel.empty())
-            {
-                _handlePages.second = i;
-                _handlePoints.second = sel.back().toRect().bottomRight();
-                break;
-            }
-        }
-    }
-    qDebug() << _rectPages.first << _rectPages.second;
-    qDebug() << _handlePages.first << _handlePages.second;
-
-    emit _pageModel->dataChanged(_pageModel->index(_rectPages.first),
-            _pageModel->index(_rectPages.second));
+    emit _pageModel->dataChanged(_pageModel->index(_orderedPages.first),
+            _pageModel->index(_orderedPages.second));
 }
 
 void PDFView::_loadPDF()
@@ -291,7 +241,6 @@ void PDFView::_loadPages()
     QList<PDFPage*> pages;
     int width=-1, height=-1;
 
-    qDebug() << "PDFView::_loadPages BEGIN";
     for (int i=0; i<_numPages; i++)
     {
         auto page = new PDFPage(docPDF->page(i), i, _dpi);
@@ -300,16 +249,39 @@ void PDFView::_loadPages()
         if (height < size.height()) height = size.height();
         pages.push_back(page);
     }
-    qDebug() << "PDFView::_loadPages END";
 
     _pageSize = QSize(width, height);
     emit pageSizeChanged();
-    qDebug() << "PDFView::_loadPages" << _pageSize;
 
     Q_CHECK_PTR(_pageModel);
     _pageModel->setPages(pages);
 }
+/*
+void PDFView::_loadClips(const QString &path)
+{
+    auto &db = Database::get();
+    auto clips = db.getClips(path);
 
+    for (auto it=clips.begin(), e=clips.end(); it!=e; it++)
+    {
+        auto o = it->clipData().object();
+        if (it->type() == SelectionMode::Rectangle)
+        {
+            auto *p = _pageModel->page(it->page1());
+            p->addClipRect(it->id(), o.rect.toRect());
+        }
+        else
+        {
+            auto l = o.rect.toList();
+            for (int i=it->page1; i<=it->page2; it++)
+            {
+                auto *p = _pageModel->page(i);
+                p->addClipText(it->id(), l[i-it->page1]);
+            }
+        }
+    }
+}
+*/
 QImage PDFView::renderPage(int page) const
 {
     QPoint res(_dpi * _zoom);
